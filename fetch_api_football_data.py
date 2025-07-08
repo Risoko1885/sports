@@ -2,6 +2,7 @@
 import requests
 import datetime
 import json
+import os
 
 # === НАСТРОЙКИ ===
 API_KEY = "0986bfd3b0ea4900794f791df18c5645"
@@ -26,10 +27,20 @@ def get_fixture_stats(fixture_id):
     return stats
 
 def send_to_emelya(payload):
-    url = "https://emelya.api/v1/upload/match-data"  # пример: реальный URL добавим позже
+    url = "https://emelya.api/v1/upload/match-data"  # пока заглушка
     headers = {"Content-Type": "application/json"}
-    response = requests.post(url, json=payload, headers=headers)
-    return response.status_code == 200
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        return response.status_code == 200
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Ошибка подключения к Эмеле: {e}")
+        return False
+
+def save_locally(data):
+    filename = f"data_{TODAY}.json"
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    print(f"📁 Данные сохранены локально в файл: {filename}")
 
 def main():
     print(f"Сбор матчей за {TODAY}...")
@@ -50,11 +61,11 @@ def main():
 
     print(f"Матчей собрано: {len(all_data)}")
 
-    # Отправка в Эмелю
+    # Попробуем отправить в Эмелю, иначе сохраним
     if send_to_emelya(all_data):
         print("✅ Данные успешно отправлены")
     else:
-        print("❌ Ошибка отправки данных")
+        save_locally(all_data)
 
 if __name__ == "__main__":
     main()
